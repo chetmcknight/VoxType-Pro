@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="VoxType Pro - Premium Voice-to-Text with Global Shortcuts">
+  <title>VoxType Pro | Global VTT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Inter:wght@400;500;700;900&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #050505;
+      --accent-color: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.4);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --font-main: 'Inter', sans-serif;
+      --font-display: 'Outfit', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      background-image:
+        radial-gradient(circle at 50% -20%, #1e1b4b 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, #0c0a09 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      /* Relaxed tracking to prevent clipping */
+      margin-bottom: 0.5rem;
+      text-align: center;
+      padding: 0 40px;
+      /* Increased padding */
+      color: #fff;
+      overflow: visible;
+      /* Ensure no clipping */
+    }
+
+    .pro-gradient {
+      background: linear-gradient(135deg, #ff00ff 0%, #6366f1 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-family: var(--font-display);
+      font-weight: 900;
+    }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 32px;
+      padding: 2rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .mic-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    .mic-btn {
+      background: transparent;
+      border: none;
+      width: 100px;
+      height: 100px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      padding: 0;
+      border-radius: 50%;
+      /* Perfect Circle */
+      overflow: hidden;
+      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mic-btn:hover {
+      transform: scale(1.08);
+      filter: brightness(1.1) drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+    }
+
+    .mic-icon-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* Increased scale to ensure the gradient fills the circular clip area completely */
+      transform: scale(1.6);
+    }
+
+    .mic-btn.recording {
+      animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    .mic-btn.recording .mic-icon-img {
+      filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.8)) brightness(1.1);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.4));
+      }
+
+      50% {
+        transform: scale(1.06);
+        filter: drop-shadow(0 0 35px rgba(239, 68, 68, 0.8));
+      }
+    }
+
+    .mic-instruction {
+      font-size: 0.85rem;
+      color: #22c55e;
+      /* Success Green */
+      font-weight: 600;
+      transition: all 0.3s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .mic-instruction.recording {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+
+    .transcript-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .transcript-area {
+      width: 100%;
+      min-height: 110px;
+      max-height: 110px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 1.2rem;
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      overflow-y: auto;
+      margin-bottom: 8px;
+    }
+
+    .transcript-label {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+      margin-left: 10px;
+      font-weight: 700;
+      display: block;
+    }
+
+    .transcript-area b {
+      color: var(--text-primary);
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.8rem;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Language Selector Styling */
+    .lang-selector-container {
+      width: 100%;
+      margin-top: 5px;
+      position: relative;
+    }
+
+    .lang-select {
+      width: 100%;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      color: white;
+      font-family: var(--font-main);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .lang-select:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .lang-select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    }
+
+    .lang-selector-container::after {
+      content: '▾';
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      font-size: 1.2rem;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #71717a;
+    }
+
+    .recording .dot {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    #debugLog {
+      font-size: 0.6rem;
+      color: #777;
+      font-family: monospace;
+      width: 100%;
+      text-align: left;
+      border-top: 1px solid var(--glass-border);
+      padding-top: 0.5rem;
+    }
+
+    /* High-Visibility Success Flash */
+    .toast {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(34, 197, 94, 0.95);
+      backdrop-filter: blur(15px);
+      color: white;
+      padding: 20px 40px;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 0 50px rgba(34, 197, 94, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+      z-index: 2000;
+      white-space: nowrap;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .toast-icon {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border-radius: 50%;
+      color: #22c55e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>VoxType <span class="pro-gradient">Pro</span></h1>
+    </div>
+
+    <div class="glass-panel">
+      <div class="status-badge" id="status">
+        <div class="dot"></div><span>Ready</span>
+      </div>
+      <div class="mic-container" id="micContainer">
+        <button class="mic-btn" id="micBtn">
+          <img src="icon128.png" id="micIcon" class="mic-icon-img" alt="VoxType Icon">
+        </button>
+        <div class="mic-instruction" id="micInstruction">Click to Start Recording</div>
+      </div>
+      <div id="setupArea" style="text-align: center;">
+        <p style="font-size: 0.8rem; color: #a1a1aa; margin-bottom: 10px;">Mic not working?</p>
+        <button id="permBtn"
+          style="background: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600;">Open
+          Setup Page</button>
+        <p style="margin-top: 8px;"><a href="setup.html" target="_blank"
+            style="color: var(--accent-color); font-size: 0.7rem; text-decoration: underline;">Direct Link
+            (Fallback)</a></p>
+      </div>
+
+      <div class="transcript-container">
+        <!-- Ready to Paste Toast -->
+        <div id="toast" class="toast">
+          <div class="toast-icon">✓</div>
+          <span>Ready to Paste</span>
+        </div>
+
+        <label class="transcript-label" id="sourceLabel">English</label>
+        <div class="transcript-area" id="transcriptArea">
+          <span style="opacity: 0.3; font-style: italic;">Voice transcription will appear here...</span>
+        </div>
+
+        <label class="transcript-label" id="targetLabel">Translation</label>
+        <div class="transcript-area" id="translationArea"
+          style="border-color: rgba(99, 102, 241, 0.3); min-height: 80px; max-height: 80px;">
+          <span style="opacity: 0.3; font-style: italic;">Translated text will appear here...</span>
+        </div>
+      </div>
+
+      <div class="flex" style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;">
+        <div
+          style="font-size: 0.65rem; color: #22c55e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9;">
+          ⚡ Zero-Click Sync Active
+        </div>
+
+        <div class="lang-selector-container">
+          <select id="langSelect" class="lang-select">
+            <option value="en">English (Original)</option>
+            <option value="ar">Arabic</option>
+            <option value="zh">Chinese</option>
+            <option value="fa">Farsi</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="hi">Hindi</option>
+            <option value="it">Italian</option>
+            <option value="ja">Japanese</option>
+            <option value="ko">Korean</option>
+            <option value="pt">Portuguese</option>
+            <option value="ro">Romanian</option>
+            <option value="ru">Russian</option>
+            <option value="es">Spanish</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="copyBtn"
+          style="width: 100%; padding: 12px; margin-top: 5px; font-weight: 700;">Copy English</button>
+        <button class="btn" id="clearBtn"
+          style="color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); width: 100%;">Clear Everything</button>
+      </div>
+      <div id="debugLog">[System] initialized</div>
+    </div>
+  </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+
+</html>

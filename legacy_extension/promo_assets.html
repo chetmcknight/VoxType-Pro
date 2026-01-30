@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoxType Promo Assets</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap');
+
+        body {
+            background-color: #000;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+            color: white;
+        }
+
+        .asset-container {
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1e1e24 0%, #000000 100%);
+        }
+
+        /* --- MARQUEE TILE (1400x560) --- */
+        #marquee-tile {
+            width: 1400px;
+            height: 560px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 100px;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #0f0f13 0%, #181820 100%);
+            position: relative;
+        }
+
+        /* Abstract Background Glows */
+        #marquee-tile::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        #marquee-tile::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            right: -10%;
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .marquee-content {
+            z-index: 2;
+            max-width: 600px;
+        }
+
+        .logo-text {
+            font-size: 6rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .pro-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: 2rem;
+            font-weight: 500;
+            color: #a1a1aa;
+            line-height: 1.4;
+        }
+
+        /* Mock UI in Marquee */
+        .mock-ui {
+            z-index: 2;
+            width: 450px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: perspective(1000px) rotateY(-10deg) rotateX(5deg);
+        }
+
+        .mock-row {
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 15px;
+            border-radius: 10px;
+        }
+
+        .mock-btn {
+            height: 60px;
+            background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+            border-radius: 12px;
+            margin-top: 20px;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        /* --- SMALL TILE (440x280) --- */
+        #small-tile {
+            width: 440px;
+            height: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0a0a0d 0%, #16161d 100%);
+            position: relative;
+        }
+
+        #small-tile .logo-text {
+            font-size: 3.5rem;
+            margin-bottom: 0;
+            z-index: 2;
+        }
+
+        #small-tile::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+            margin-bottom: 20px;
+            z-index: 2;
+            box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            -webkit-mask: url('icon128.png') center/contain no-repeat;
+            mask: url('icon128.png') center/contain no-repeat;
+            /* Simple rounded rect for mic shape mimicking the icon if image not loading */
+            border-radius: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Marquee Promo Tile -->
+    <div id="marquee-tile" class="asset-container">
+        <div class="marquee-content">
+            <div class="logo-text">VoxType <span class="pro-gradient">Pro</span></div>
+            <div class="tagline">Speak Once.<br>Paste Anywhere.<br>Now in 14 Languages.</div>
+        </div>
+        <div class="mock-ui">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div
+                    style="width:60px; height:60px; background:linear-gradient(135deg, #6366f1, #ec4899); border-radius:50%; margin:0 auto; box-shadow:0 0 20px rgba(99,102,241,0.5);">
+                </div>
+            </div>
+            <div class="mock-row" style="width:100%;"></div>
+            <div class="mock-row" style="width:100%;"></div>
+            <div class="mock-btn">Copy Spanish</div>
+        </div>
+    </div>
+
+    <!-- Small Promo Tile -->
+    <div id="small-tile" class="asset-container">
+        <div class="icon-circle">
+            <!-- Basic shape simulation -->
+            <div style="width:24px; height:40px; background:white; border-radius:12px;"></div>
+        </div>
+        <div class="logo-text">VoxType <span class="pro-gradient">Pro</span></div>
+    </div>
+
+</body>
+
+</html>
