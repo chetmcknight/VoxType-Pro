@@ -5,7 +5,7 @@ VoxType Pro has been upgraded from a Chrome Extension to a standalone Modern Web
 
 ## Features
 - **🎙️ Advanced Voice Recognition**: Continuous, unlimited voice-to-text.
-- **🌍 14 Languages**: Instant translation engine powered by Google Translate API.
+- **🌍 99 Languages**: Instant translation engine powered by Google Translate API.
 - **⚡ Zero-Click Sync**: Automatically syncs transcriptions to your clipboard.
 - **🎨 Premium UI**: Glassmorphism design with dynamic animations and dark mode.
 
