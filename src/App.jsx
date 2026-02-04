@@ -273,8 +273,8 @@ function App() {
           </button>
           <div className={`mic-instruction ${isRecording ? 'recording' : ''}`}>
             {isRecording 
-              ? (fnKeyRecording ? `Release Ctrl+Space to stop...` : `Click to stop or release Ctrl+Space`) 
-              : `Click to start or hold Ctrl+Space to talk`
+              ? (fnKeyRecording ? `Release Ctrl+Shift to stop...` : `Click to stop or release Ctrl+Shift`) 
+              : `Click microphone to start or hold Ctrl+Shift to talk`
             }
           </div>
         </div>

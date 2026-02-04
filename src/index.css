@@ -169,14 +169,14 @@ body {
   font-size: 0.85rem;
   color: #22c55e;
   /* Success Green */
-  font-weight: 600;
+  font-weight: 400;
   transition: all 0.3s ease;
   letter-spacing: -0.01em;
 }
 
 .mic-instruction.recording {
   color: #ef4444;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 
