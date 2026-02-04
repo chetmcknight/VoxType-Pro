@@ -65,6 +65,40 @@ function App() {
     })
   }
 
+  // Auto-paste when Ctrl+Space is released
+  const autoPasteOnRelease = (text) => {
+    if (!text) return
+    
+    // Try to paste immediately into external apps
+    navigator.clipboard.writeText(text).then(() => {
+      console.log("Auto-paste triggered for external apps")
+      
+      // Create paste event for external apps
+      try {
+        const pasteEvent = new ClipboardEvent('paste', {
+          dataType: 'text/plain',
+          data: text
+        })
+        
+        // Dispatch the event to trigger paste in other apps
+        document.dispatchEvent(pasteEvent)
+        
+        // For additional reliability with common apps
+        setTimeout(() => {
+          if (document.activeElement) {
+            document.activeElement.focus()
+            // Try standard paste command
+            document.execCommand('paste')
+          }
+        }, 100)
+      } catch (err) {
+        console.error("Auto-paste error: " + err)
+      }
+    }).catch(err => {
+      console.error("Clipboard write error: " + err)
+    })
+  }
+
   // Initialize Speech Recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -180,13 +214,28 @@ function App() {
       // Track Ctrl key state
       if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.key === 'Control') {
         setIsCtrlPressed(false)
-        // If we're recording via Ctrl+Space, stop when Ctrl is released
-        if (fnKeyRecording && isRecording) {
-          setFnKeyRecording(false)
-          setIsRecording(false)
-          if (recognitionRef.current) {
-            recognitionRef.current.stop()
-          }
+        return
+      }
+      
+      // Check for Space release when using Ctrl+Space
+      const isSpaceRelease = fnKeyRecording && isRecording && (e.code === 'Space' || e.key === 'Space')
+      
+      if (isSpaceRelease) {
+        e.preventDefault()
+        // Auto-paste text when releasing Ctrl+Space
+        const textToPaste = transcriptRef.current
+        if (textToPaste) {
+          autoPasteOnRelease(textToPaste)
+        }
+        
+        // Stop recording when shortcut key is released
+        setFnKeyRecording(false)
+        setIsRecording(false)
+        if (recognitionRef.current) {
+          recognitionRef.current.stop()
+        }
+      }
+    }
         }
         return
       }
@@ -218,6 +267,12 @@ function App() {
     if (!recognitionRef.current) return
 
     if (isRecording) {
+      // Auto-paste before stopping
+      const textToPaste = transcriptRef.current
+      if (textToPaste) {
+        syncToRAM(textToPaste, true) // Show toast for button clicks too
+      }
+      
       recognitionRef.current.stop()
       setIsRecording(false)
     } else {
