@@ -6,14 +6,21 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: true
-  },
-  build: {
-    target: 'esnext'
-  },
-  server: {
+    host: true,
     hmr: {
       overlay: false
+    }
+  },
+  build: {
+    target: 'esnext',
+    minify: 'esbuild',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom']
+        }
+      }
     }
   }
 })

@@ -1,18 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
 import './index.css'
 
+// Development logger
+const isDev = import.meta.env.DEV
+const log = (...args) => isDev && console.log(...args)
+
 function App() {
+  // Check speech recognition support
+  const speechRecognitionSupported = ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window)
+  
   const [isRecording, setIsRecording] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [interimTranscript, setInterimTranscript] = useState('')
   const [translation, setTranslation] = useState('')
   const [language, setLanguage] = useState('en')
-  const [status, setStatus] = useState('Ready')
+  const [status, setStatus] = useState(speechRecognitionSupported ? 'Ready' : 'Speech recognition not supported')
   const [showToast, setShowToast] = useState(false)
   const [micError, setMicError] = useState(false)
+  const [fnKeyRecording, setFnKeyRecording] = useState(false)
 
   const recognitionRef = useRef(null)
-  const transcriptRef = useRef('') // To keep track for event handlers without closure issues
+  const transcriptRef = useRef('')
 
   // Toast Helper
   const triggerToast = () => {
@@ -20,232 +28,100 @@ function App() {
     setTimeout(() => setShowToast(false), 2500)
   }
 
-  // Translation Logic
   const translateText = async (text, targetLang) => {
-    if (!text || targetLang === 'en') return text
-    console.log(`Translating to ${targetLang}...`)
+    if (targetLang === 'en') return text
     try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
-      const response = await fetch(url)
-      const data = await response.json()
-      return data[0].map(x => x[0]).join('')
-    } catch (e) {
-      console.error("Translation Error: " + e)
+      const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
+      const data = await res.json()
+      return data[0].map(item => item[0]).join('')
+    } catch (error) {
+      console.error('Translation failed:', error)
       return text
     }
   }
 
-  // Sync to Clipboard and Paste at Cursor
-  const syncToRAM = (text, silent = true) => {
-    if (!text) return
-    navigator.clipboard.writeText(text).then(() => {
-      console.log("RAM Updated")
-      
-      // Try to paste at cursor position using modern approach
-      const activeElement = document.activeElement
-      if (activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        activeElement.contentEditable === 'true'
-      )) {
-        if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
-          const start = activeElement.selectionStart
-          const end = activeElement.selectionEnd
-          const value = activeElement.value
-          activeElement.value = value.substring(0, start) + text + value.substring(end)
-          activeElement.selectionStart = activeElement.selectionEnd = start + text.length
-        } else if (activeElement.contentEditable === 'true') {
-          document.execCommand('insertText', false, text)
-        }
-      }
-      
-      if (!silent) triggerToast()
-    }).catch(err => {
-      console.error("RAM Sync Error: " + err)
-    })
-  }
 
-  // Auto-paste when Ctrl+Space is released
+
   const autoPasteOnRelease = (text) => {
     if (!text) return
     
-    // Try to paste immediately into external apps
+    // Copy to clipboard first
     navigator.clipboard.writeText(text).then(() => {
-      console.log("Auto-paste triggered for external apps")
+      log("Auto-paste triggered for external apps")
       
-      // Create paste event for external apps
-      try {
-        const pasteEvent = new ClipboardEvent('paste', {
-          dataType: 'text/plain',
-          data: text
-        })
+      // Try to paste into active element
+      const activeElement = document.activeElement
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.contentEditable === 'true')) {
+        activeElement.focus()
         
-        // Dispatch the event to trigger paste in other apps
-        document.dispatchEvent(pasteEvent)
-        
-        // For additional reliability with common apps
-        setTimeout(() => {
-          if (document.activeElement) {
-            document.activeElement.focus()
-            // Try standard paste command
-            document.execCommand('paste')
+        // Try different paste methods
+        try {
+          // Method 1: execCommand
+          document.execCommand('paste')
+        } catch (execError) {
+          log("execCommand paste failed:", execError)
+          try {
+            // Method 2: Dispatch paste event
+            const pasteEvent = new ClipboardEvent('paste', {
+              bubbles: true,
+              cancelable: true,
+              dataType: 'text/plain',
+              data: text
+            })
+            activeElement.dispatchEvent(pasteEvent)
+          } catch (pasteError) {
+            log("Paste methods failed:", pasteError)
           }
-        }, 100)
-      } catch (err) {
-        console.error("Auto-paste error: " + err)
+        }
       }
     }).catch(err => {
-      console.error("Clipboard write error: " + err)
+      console.error("Auto-paste error: " + err)
     })
   }
-
-  // Initialize Speech Recognition
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      setStatus('STT Not Supported')
-      return
-    }
-
-    const recognition = new SpeechRecognition()
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.lang = 'en-US'
-
-    recognition.onresult = (event) => {
-      let interim = ''
-      let final = transcriptRef.current // Start with existing final
-
-      // We need to parse slightly differently for continuous
-      // Actually, standard behavior is that event.results accumulates. 
-      // But we need to be careful not to duplicate.
-      // Often with continuous, we just iterate new results.
-      // Let's use the standard loop from the original code which reconstructs.
-
-      let newFinalChunk = ''
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          newFinalChunk += event.results[i][0].transcript
-        } else {
-          interim += event.results[i][0].transcript
-        }
-      }
-
-      if (newFinalChunk) {
-        transcriptRef.current += (transcriptRef.current ? ' ' : '') + newFinalChunk
-        syncToRAM(transcriptRef.current, true)
-        setTranscript(transcriptRef.current)
-
-        // Trigger translation if needed
-        if (language !== 'en') {
-          translateText(transcriptRef.current, language).then(setTranslation)
-        }
-      }
-
-      setInterimTranscript(interim)
-    }
-
-    recognition.onstart = () => {
-      setIsRecording(true)
-      setStatus('Listening...')
-      setMicError(false)
-    }
-
-    recognition.onend = () => {
-      console.log('Recognition ended')
-      setIsRecording(false)
-      setStatus('Ready')
-      
-      // If we have content, final sync
-      if (transcriptRef.current) {
-        syncToRAM(transcriptRef.current, false)
-      }
-    }
-
-    recognition.onerror = (event) => {
-      console.error("Speech Error", event.error)
-      if (event.error === 'not-allowed') {
-        setMicError(true)
-        setStatus('Mic Blocked')
-      }
-      setIsRecording(false)
-    }
-
-    recognitionRef.current = recognition
-  }, [language]) // Re-init if lang changes? No, lang is for translation.
-
-  // Track if recording was started by shortcut key (for walkie-talkie mode)
-  const [fnKeyRecording, setFnKeyRecording] = useState(false)
-  const [isCtrlPressed, setIsCtrlPressed] = useState(false)
 
   // Keyboard Shortcut Handler (Push-to-Talk style)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Track Ctrl key state
-      if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.key === 'Control') {
-        setIsCtrlPressed(true)
-        return
-      }
-      
-      // Check for Ctrl+Space
-      const isCtrlSpace = isCtrlPressed && (e.code === 'Space' || e.key === 'Space')
+      // Start recording when both Ctrl and Space are pressed
+      const isCtrlSpace = e.ctrlKey && (e.code === 'Space' || e.key === 'Space')
       
       if (isCtrlSpace && !isRecording && !fnKeyRecording) {
         e.preventDefault()
-        // Start recording when shortcut key is pressed
-        if (!recognitionRef.current) return
+        log('Starting Ctrl+Space recording')
+        setFnKeyRecording(true)
+        setIsRecording(true)
         setTranscript('')
         setInterimTranscript('')
         setTranslation('')
         transcriptRef.current = ''
-        setFnKeyRecording(true)
         try {
-          recognitionRef.current.start()
+          if (recognitionRef.current) {
+            recognitionRef.current.start()
+          } else {
+            console.error('Speech recognition not initialized')
+          }
         } catch (error) {
           console.error('Failed to start recognition:', error)
           setMicError(true)
-          setFnKeyRecording(false)
         }
       }
     }
 
     const handleKeyUp = (e) => {
-      // Track Ctrl key state
-      if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.key === 'Control') {
-        setIsCtrlPressed(false)
-        return
-      }
+      // Stop recording when EITHER Ctrl OR Space is released
+      const isCtrlRelease = (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.key === 'Control')
+      const isSpaceRelease = (e.code === 'Space' || e.key === 'Space')
       
-      // Check for Space release when using Ctrl+Space
-      const isSpaceRelease = fnKeyRecording && isRecording && (e.code === 'Space' || e.key === 'Space')
-      
-      if (isSpaceRelease) {
+      if (fnKeyRecording && isRecording && (isCtrlRelease || isSpaceRelease)) {
         e.preventDefault()
-        // Auto-paste text when releasing Ctrl+Space
+        log('Stopping Ctrl+Space recording')
+        
         const textToPaste = transcriptRef.current
         if (textToPaste) {
+          log('Auto-pasting text:', textToPaste)
           autoPasteOnRelease(textToPaste)
         }
         
-        // Stop recording when shortcut key is released
-        setFnKeyRecording(false)
-        setIsRecording(false)
-        if (recognitionRef.current) {
-          recognitionRef.current.stop()
-        }
-      }
-    }
-        }
-        return
-      }
-      
-      // Check for Space release when using Ctrl+Space
-      const isSpaceRelease = fnKeyRecording && (e.code === 'Space' || e.key === 'Space')
-      
-      if (isSpaceRelease && isRecording && fnKeyRecording) {
-        e.preventDefault()
-        // Stop recording when shortcut key is released
         setFnKeyRecording(false)
         setIsRecording(false)
         if (recognitionRef.current) {
@@ -256,52 +132,45 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
+    
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [isRecording, fnKeyRecording, isCtrlPressed])
+  }, [isRecording, fnKeyRecording])
 
-  // Toggle Recording (for button clicks)
   const toggleRecording = () => {
     if (!recognitionRef.current) return
 
     if (isRecording) {
-      // Auto-paste before stopping
-      const textToPaste = transcriptRef.current
-      if (textToPaste) {
-        syncToRAM(textToPaste, true) // Show toast for button clicks too
-      }
-      
       recognitionRef.current.stop()
-      setIsRecording(false)
     } else {
-      setTranscript('')
-      setInterimTranscript('')
-      setTranslation('')
-      transcriptRef.current = ''
       try {
         recognitionRef.current.start()
-      } catch (e) {
-        console.error(e)
+      } catch (error) {
+        console.error('Failed to start recognition:', error)
         setMicError(true)
       }
     }
   }
 
-  // Handlers
   const handleCopy = async () => {
-    const text = language === 'en' ? transcript : translation
-    if (!text) return
-    syncToRAM(text, false)
+    const textToCopy = language === 'en' ? transcript : translation
+    if (!textToCopy) return
+    
+    try {
+      await navigator.clipboard.writeText(textToCopy)
+      triggerToast()
+    } catch (err) {
+      console.error('Failed to copy text: ', err)
+    }
   }
 
   const handleClear = () => {
     setTranscript('')
-    setInterimTranscript('')
     setTranslation('')
+    setInterimTranscript('')
     transcriptRef.current = ''
-    // setStatus('Ready')
   }
 
   const handleLangChange = async (e) => {
@@ -318,8 +187,70 @@ function App() {
   const getTargetLabel = () => {
     if (language === 'en') return 'Translation'
     const sel = document.querySelector(`option[value="${language}"]`)
-    return sel ? sel.text.split(' (')[0] : 'Translation'
+    return sel ? sel.text.split('(')[0] : 'Translation'
   }
+
+  // Speech Recognition Setup
+  useEffect(() => {
+    if (!speechRecognitionSupported) {
+      return
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = 'en-US'
+
+    recognition.onstart = () => {
+      setIsRecording(true)
+      setStatus('Listening...')
+      setMicError(false)
+    }
+
+    recognition.onresult = (event) => {
+      let finalTranscript = ''
+      let interimTranscript = ''
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' '
+        } else {
+          interimTranscript += transcript
+        }
+      }
+
+      if (finalTranscript) {
+        const newTranscript = transcriptRef.current + finalTranscript
+        setTranscript(newTranscript)
+        transcriptRef.current = newTranscript
+        
+        if (language !== 'en') {
+          translateText(newTranscript, language).then(setTranslation)
+        }
+      }
+      setInterimTranscript(interimTranscript)
+    }
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error)
+      if (event.error === 'not-allowed') {
+        setMicError(true)
+        setStatus('Microphone access denied')
+      } else {
+        setStatus(`Error: ${event.error}`)
+      }
+      setIsRecording(false)
+    }
+
+    recognition.onend = () => {
+      setIsRecording(false)
+      setStatus('Ready')
+    }
+
+    recognitionRef.current = recognition
+  }, [language, speechRecognitionSupported])
 
   return (
     <div className="container">
@@ -356,6 +287,10 @@ function App() {
         )}
 
         <div className="transcript-container">
+          <div className={`toast ${showToast ? 'show' : ''}`}>
+            <div className="toast-message">Ready to Paste</div>
+          </div>
+
           <label className="transcript-label">English</label>
           <div className="transcript-area">
             <div className="transcript-text">
@@ -364,19 +299,16 @@ function App() {
             </div>
           </div>
 
-          <div style={{ height: '20px' }}></div>
           <label className="transcript-label">{getTargetLabel()}</label>
           <div className="transcript-area" style={{ borderColor: 'rgba(99, 102, 241, 0.3)' }}>
             <div className="transcript-text">
               {translation || <span style={{ opacity: 0.3, fontStyle: 'italic' }}>Translated text will appear here...</span>}
             </div>
           </div>
-        </div>
 
-        <div style={{ height: '40px' }}></div>
-
-        <div className="lang-selector-container">
-          <select className="lang-select" value={language} onChange={handleLangChange}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginTop: '25px', width: '100%' }}>
+            <div className="lang-selector-container" style={{ margin: 0 }}>
+              <select className="lang-select" value={language} onChange={handleLangChange}>
             <option value="en">English (Original)</option>
             <option value="af">Afrikaans</option>
             <option value="sq">Albanian</option>
@@ -399,10 +331,10 @@ function App() {
             <option value="cs">Czech</option>
             <option value="da">Danish</option>
             <option value="nl">Dutch</option>
-            <option value="en">English</option>
             <option value="eo">Esperanto</option>
             <option value="et">Estonian</option>
             <option value="tl">Filipino</option>
+            <option value="fa">Persian (Farsi)</option>
             <option value="fi">Finnish</option>
             <option value="fr">French</option>
             <option value="fy">Frisian</option>
@@ -411,62 +343,46 @@ function App() {
             <option value="de">German</option>
             <option value="el">Greek</option>
             <option value="gu">Gujarati</option>
-            <option value="ht">Haitian Creole</option>
-            <option value="ha">Hausa</option>
-            <option value="haw">Hawaiian</option>
-            <option value="iw">Hebrew</option>
+            <option value="ha">Haitian Creole</option>
+            <option value="he">Hebrew</option>
             <option value="hi">Hindi</option>
-            <option value="hmn">Hmong</option>
             <option value="hu">Hungarian</option>
+            <option value="hy">Armenian</option>
             <option value="is">Icelandic</option>
-            <option value="ig">Igbo</option>
             <option value="id">Indonesian</option>
-            <option value="ga">Irish</option>
+            <option value="ig">Igbo</option>
             <option value="it">Italian</option>
             <option value="ja">Japanese</option>
             <option value="jw">Javanese</option>
             <option value="kn">Kannada</option>
             <option value="kk">Kazakh</option>
-            <option value="km">Khmer</option>
             <option value="ko">Korean</option>
             <option value="ku">Kurdish (Kurmanji)</option>
             <option value="ky">Kyrgyz</option>
             <option value="lo">Lao</option>
-            <option value="la">Latin</option>
-            <option value="lv">Latvian</option>
             <option value="lt">Lithuanian</option>
+            <option value="lv">Latvian</option>
             <option value="lb">Luxembourgish</option>
             <option value="mk">Macedonian</option>
-            <option value="mg">Malagasy</option>
-            <option value="ms">Malay</option>
             <option value="ml">Malayalam</option>
-            <option value="mt">Maltese</option>
-            <option value="mi">Maori</option>
             <option value="mr">Marathi</option>
             <option value="mn">Mongolian</option>
             <option value="my">Myanmar (Burmese)</option>
             <option value="ne">Nepali</option>
             <option value="no">Norwegian</option>
             <option value="ps">Pashto</option>
-            <option value="fa">Persian (Farsi)</option>
+            <option value="pa">Punjabi</option>
             <option value="pl">Polish</option>
             <option value="pt">Portuguese</option>
-            <option value="pa">Punjabi</option>
             <option value="ro">Romanian</option>
             <option value="ru">Russian</option>
             <option value="sm">Samoan</option>
-            <option value="gd">Scots Gaelic</option>
-            <option value="sr">Serbian</option>
-            <option value="st">Sesotho</option>
-            <option value="sn">Shona</option>
-            <option value="sd">Sindhi</option>
+            <option value="sg">Sinhala</option>
             <option value="si">Sinhala</option>
             <option value="sk">Slovak</option>
             <option value="sl">Slovenian</option>
             <option value="so">Somali</option>
             <option value="es">Spanish</option>
-            <option value="su">Sundanese</option>
-            <option value="sw">Swahili</option>
             <option value="sv">Swedish</option>
             <option value="tg">Tajik</option>
             <option value="ta">Tamil</option>
@@ -474,7 +390,6 @@ function App() {
             <option value="th">Thai</option>
             <option value="tr">Turkish</option>
             <option value="uk">Ukrainian</option>
-            <option value="ur">Urdu</option>
             <option value="ug">Uyghur</option>
             <option value="uz">Uzbek</option>
             <option value="vi">Vietnamese</option>
@@ -483,18 +398,17 @@ function App() {
             <option value="yi">Yiddish</option>
             <option value="yo">Yoruba</option>
             <option value="zu">Zulu</option>
-          </select>
-        </div>
+            </select>
+            </div>
 
-          <button className="btn btn-primary" style={{ width: '100%', padding: '12px', fontWeight: 700 }} onClick={handleCopy}>
-            Copy {language === 'en' ? 'English' : 'Translation'}
-          </button>
-          <button className="btn" style={{ color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.2)', width: '100%', marginTop: '1px' }} onClick={handleClear}>
-            Clear Everything
-          </button>
-
-        <div id="debugLog">
-          [System] App Initialized v2.0
+            <button className="btn btn-primary" onClick={handleCopy}>
+              Copy {language === 'en' ? 'English' : 'Translation'}
+            </button>
+            
+            <button className="btn" style={{ color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.2)' }} onClick={handleClear}>
+              Clear Everything
+            </button>
+          </div>
         </div>
       </div>
     </div>

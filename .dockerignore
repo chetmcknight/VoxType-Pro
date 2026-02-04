@@ -3,3 +3,10 @@ dist
 .git
 .DS_Store
 legacy_extension
+package-lock.json
+*.md
+.gitignore
+.dockerignore
+.vscode
+.idea
+*.log

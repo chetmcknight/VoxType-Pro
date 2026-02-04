@@ -16,6 +16,14 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  width: 100%;
+  height: 100%;
+}
+
 body {
   background-color: var(--bg-color);
   background-image:
@@ -24,24 +32,32 @@ body {
   color: var(--text-primary);
   font-family: var(--font-main);
   overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   height: 100vh;
   width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
-  padding: 1.5rem;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
   width: 100%;
-  height: 100vh;
-  max-width: 100vh;
+  min-height: 100vh;
+  max-width: 450px;
   margin: 0 auto;
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .header h1 {
@@ -74,10 +90,9 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: 32px;
-  padding: 2rem;
-  width: min(85vw, 400px);
-  min-height: auto;
-  max-height: 90vh;
+  padding: 2.5rem;
+  width: min(90vw, 420px);
+  max-height: calc(100vh - 2rem);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -85,20 +100,21 @@ body {
   gap: 1.5rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .mic-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1.5rem;
 }
 
 .mic-btn {
   background: transparent;
   border: none;
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -111,6 +127,7 @@ body {
   overflow: hidden;
   filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
   border: 2px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .mic-btn:hover {
@@ -166,22 +183,21 @@ body {
 .transcript-container {
   position: relative;
   width: 100%;
-  height: 180px;
   flex-shrink: 0;
 }
 
 .transcript-area {
   width: 100%;
-  height: 80px;
+  height: 85px;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
-  padding: 1.2rem;
-  font-size: 1.05rem;
+  padding: 1.25rem 1.25rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--text-secondary);
   overflow: hidden;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   box-sizing: border-box;
   position: relative;
   flex-shrink: 0;
@@ -189,15 +205,15 @@ body {
 
 .transcript-text {
   position: absolute;
-  top: 1.2rem;
-  left: 1.2rem;
-  right: 1.2rem;
+  top: 1.25rem;
+  left: 1.25rem;
+  right: 1.25rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.95rem;
-  line-height: 1.3;
-  max-width: calc(100% - 2.4rem);
+  line-height: 1.4;
+  max-width: calc(100% - 2.5rem);
   box-sizing: border-box;
 }
 
@@ -208,6 +224,7 @@ body {
   letter-spacing: 0.1em;
   margin-bottom: 6px;
   margin-left: 10px;
+  margin-top: 1.25rem;
   font-weight: 700;
   display: block;
 }
@@ -217,18 +234,21 @@ body {
 }
 
 .btn {
-  flex: 1;
-  padding: 0.8rem;
+  width: 100%;
+  padding: 0.9rem;
   border-radius: 12px;
   border: 1px solid var(--glass-border);
   background: rgba(255, 255, 255, 0.05);
   color: white;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .btn-primary {
@@ -241,19 +261,20 @@ body {
 /* Language Selector Styling */
 .lang-selector-container {
   width: 100%;
-  margin-top: 5px;
+  margin-top: 0;
+  margin-bottom: 0.3rem;
   position: relative;
 }
 
 .lang-select {
   width: 100%;
-  padding: 10px 15px;
+  padding: 0.85rem 1.15rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   color: white;
   font-family: var(--font-main);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   appearance: none;
@@ -286,13 +307,14 @@ body {
 
 .app-headline {
   font-family: var(--font-display);
-  font-size: 2.2rem;
+  font-size: 2.3rem;
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   color: #fff;
   overflow: visible;
+  white-space: nowrap;
 }
 
 .voxtype-text {
@@ -350,9 +372,12 @@ body {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .toast.show {
+  opacity: 1;
   animation: toastFadeIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
