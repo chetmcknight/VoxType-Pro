@@ -82,12 +82,12 @@ function App() {
   // Keyboard Shortcut Handler (Push-to-Talk style)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Start recording when both Ctrl and Space are pressed
-      const isCtrlSpace = e.ctrlKey && (e.code === 'Space' || e.key === 'Space')
+      // Start recording when both Ctrl and Shift are pressed
+      const isCtrlShift = e.ctrlKey && e.shiftKey
       
-      if (isCtrlSpace && !isRecording && !fnKeyRecording) {
+      if (isCtrlShift && !isRecording && !fnKeyRecording) {
         e.preventDefault()
-        log('Starting Ctrl+Space recording')
+        log('Starting Ctrl+Shift recording')
         setFnKeyRecording(true)
         setIsRecording(true)
         setTranscript('')
@@ -108,13 +108,13 @@ function App() {
     }
 
     const handleKeyUp = (e) => {
-      // Stop recording when EITHER Ctrl OR Space is released
+      // Stop recording when EITHER Ctrl OR Shift is released
       const isCtrlRelease = (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.key === 'Control')
-      const isSpaceRelease = (e.code === 'Space' || e.key === 'Space')
+      const isShiftRelease = (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.key === 'Shift')
       
-      if (fnKeyRecording && isRecording && (isCtrlRelease || isSpaceRelease)) {
+      if (fnKeyRecording && isRecording && (isCtrlRelease || isShiftRelease)) {
         e.preventDefault()
-        log('Stopping Ctrl+Space recording')
+        log('Stopping Ctrl+Shift recording')
         
         const textToPaste = transcriptRef.current
         if (textToPaste) {
